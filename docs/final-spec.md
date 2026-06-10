@@ -80,7 +80,7 @@ RRF (Reciprocal Rank Fusion) merges dense + sparse scores; dosha filter is then 
 flowchart LR
     A[📄 Scanned PDFs\nSushruta · Charaka · Ashtanga]:::source -->|15-page chunks| B[🔍 Google Document AI\nDocument OCR processor]:::ocr
     B -->|Stitch per volume| C[📝 OCR Text Files\n8 volumes]:::ocr
-    C -->|Sthana-aware segmentation| D[⚙️ chunker.py / chunk_book.py\nSentenceSplitter 1024 tok]:::process
+    C -->|Sthana-aware segmentation| D[⚙️ chunker.py / chunk_book.py\nParagraph blocks → SentenceSplitter\non overflow]:::process
     D -->|4785 chunks + structural metadata| E[🗃️ all_chunks.jsonl]:::store
     E -->|Deterministic gazetteer match| F[🏷️ tagger.py\ndosha · herb · disease tags]:::process
     F -->|Batch embed 20 texts/request| G[🚀 Voyage AI\nvoyage-4-large dense]:::embed
@@ -109,7 +109,7 @@ flowchart LR
     subgraph Generation["⚙️ Generation"]
         B -->|Pillar + topic descriptor| C[🔧 generate.py\ngenerate_dosha.py\ngenerate_services.py]:::gen
         C -->|Query + dosha filter| D[🔍 HybridRetriever\nRRF fusion · dosha hard-filter]:::retrieval
-        D -->|Top-6 grounding chunks| E[🧠 Claude Opus 4.8\nStructured ReelScript\n3 scenes · MAX 15 words]:::llm
+        D -->|Top-6 grounding chunks| E[🧠 Claude Opus 4.8\nStructured ReelScript\n3 scenes · MAX 25 words]:::llm
         E -->|Image prompt per scene| F[🎬 Veo 3.1 Lite\nHyper-realistic 9:16 · 8s clips]:::media
         E -->|Voiceover text per scene| G[🎙️ Chirp3-HD TTS\nen-IN · phonetic substitutions]:::media
         F & G -->|xfade + music bed + fade| H[🎞️ FFmpeg assembly]:::media
@@ -178,11 +178,13 @@ Prompt templates live inline in three orchestrator files — no separate templat
 | `pipeline/generate_dosha.py` | Dosha education script — user message with dosha/topic/context injection |
 | `pipeline/generate_services.py` | Clinic services script — user message with service label/category/context injection |
 
-**Constraints encoded in prompts:** voiceover word cap (25 words), grounded-only claims (`grounded_chunk_ids` must reference supplied chunks; model is penalised if it cites chunk_ids not in context), no cure/reversal language, image prompt visual rules (no faces; body-part close-ups allowed for prakriti/service topics).
+**Constraints encoded in prompts:** voiceover word cap (25 words), grounded-only claims (`grounded_chunk_ids` must reference supplied chunks; model is penalised if it cites chunk_ids not in context), no cure/reversal language, image prompt visual rules (no faces; dosha reels use elemental metaphors — wind/leaves for vata, fire/brass for pitta, earth/greenery for kapha; service reels allow anonymous treatment close-ups — hands, forehead receiving oil).
+
+**Visual styles:** two Veo styles are available via `--cartoon` flag on `generate_dosha.py`. Default is `STYLE` (hyper-realistic cinematic). `CARTOON_STYLE` (soft 2D Indian illustration, pastel tones, stylized characters) is used for prakriti topic reels only — where body constitution is the subject and character representation aids comprehension. All other topics (personality, ailment, seasonal, remedy) and all seasonal/service reels use cinematic.
 
 **Iteration pattern:** constraints are tightened by editing the field `description` strings in `Scene` (shared) or the user message in each orchestrator. A change takes effect on the next generation run — no deploy needed. The eval suite's structural checks act as a regression guard (word count, chunk citation format) so constraint drift is caught automatically.
 
-### Misc
+## Cost & Performance
 **Error handling:** Veo high-load (code 8) handled via skip-existing-clips logic; Voyage batch token limits managed with 20-text cap + 0.15 word-count margin (Sanskrit BPE expansion up to 7×); Qdrant upserts batched at 200 points to stay under 33 MB payload limit; OCR garbled Roman numerals rejected via round-trip validation (`VL→45` fails because `to_roman(45)="XLV"≠"VL"`).
 
 **Cost (per reel):** ~$0.40 Veo (4 clips × 8s × $0.05/s) + ~$0.03 Opus script + ~$0.001 Voyage embeddings + ~$0.01 TTS. Total ≈ **$0.44/reel**.
