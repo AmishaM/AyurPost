@@ -175,7 +175,7 @@ def main() -> int:
     print(f"      hook: {script.hook!r}")
 
     print("[3/5] generating Veo clips...")
-    clips_dict = generate_reel_clips(script, "vata", out_dir)   # uses seasonal hook visual
+    clips_dict = generate_reel_clips(script, dosha["key"], out_dir)
     clip_paths = [clips_dict["hook"]] + [
         clips_dict[f"scene_{i}"] for i in range(len(script.scenes))]
 

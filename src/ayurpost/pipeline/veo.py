@@ -55,6 +55,13 @@ HOOK_SUBJECT: dict[str, str] = {
                     "soft warm morning light, gentle breeze"),
     "post_monsoon": ("Bengaluru street after rain, clean wet pavements reflecting "
                      "golden late-afternoon light, fresh clear air"),
+    # dosha education hooks
+    "vata":        ("Dry autumn leaves swirling in wind over a Bengaluru street, "
+                    "movement and lightness, cool crisp air, golden-brown tones"),
+    "pitta":       ("Bright midday sun over a South Indian courtyard, vivid colours, "
+                    "intense golden light, heat shimmer above stone floor"),
+    "kapha":       ("Lush green Bengaluru garden after morning mist, heavy dewy leaves, "
+                    "cool still air, soft diffused white light"),
 }
 
 
