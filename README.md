@@ -178,7 +178,7 @@ Prompt templates live inline in three orchestrator files — no separate templat
 | `pipeline/generate_dosha.py` | Dosha education script — user message with dosha/topic/context injection |
 | `pipeline/generate_services.py` | Clinic services script — user message with service label/category/context injection |
 
-**Constraints encoded in prompts:** voiceover word cap (25 words), grounded-only claims (`grounded_chunk_ids` must reference supplied chunks; model is penalised if it cites chunk_ids not in context), no cure/reversal language, image prompt visual rules (no faces; dosha reels use elemental metaphors — wind/leaves for vata, fire/brass for pitta, earth/greenery for kapha; service reels allow anonymous treatment close-ups — hands, forehead receiving oil).
+**Constraints encoded in prompts:** voiceover word cap (25 words), grounded-only claims (`grounded_chunk_ids` must reference supplied chunks; model is penalised if it cites chunk_ids not in context), no cure/reversal language, image prompt visual rules: dosha reels use elemental metaphors (wind/leaves for vata, fire/brass for pitta, earth/greenery for kapha); service reels show equipment, oils, vessels, and treatment room — no body parts in any pillar (Veo safety filter blocks skin/body content).
 
 **Visual styles:** two Veo styles are available via `--cartoon` flag on `generate_dosha.py`. Default is `STYLE` (hyper-realistic cinematic). `CARTOON_STYLE` (soft 2D Indian illustration, pastel tones, stylized characters) is used for prakriti topic reels only — where body constitution is the subject and character representation aids comprehension. All other topics (personality, ailment, seasonal, remedy) and all seasonal/service reels use cinematic.
 
