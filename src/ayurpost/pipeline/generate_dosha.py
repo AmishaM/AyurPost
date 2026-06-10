@@ -74,7 +74,8 @@ def _load_dosha_topic(dosha_key: str, topic_type: str) -> tuple[dict, dict]:
 
 
 def generate_dosha_script(dosha: dict, topic: dict, chunks: list[dict],
-                           model: str, n_scenes: int, feedback: str = "") -> ReelScript:
+                           model: str, n_scenes: int, feedback: str = "",
+                           cartoon: bool = False) -> ReelScript:
     """One Opus call -> ReelScript grounded in chunks, dosha-education system prompt."""
     import anthropic
     from ayurpost.pipeline.content import _format_context
@@ -83,6 +84,19 @@ def generate_dosha_script(dosha: dict, topic: dict, chunks: list[dict],
         raise ValueError("no chunks supplied — refusing to generate ungrounded content")
 
     context = _format_context(chunks)
+    if cartoon:
+        image_instruction = (
+            "Image prompts: describe a scene for a soft 2D Indian illustration — "
+            "stylized characters (thin airy figures for vata, fiery dynamic ones for pitta, "
+            "grounded sturdy ones for kapha) with elemental surroundings. No text overlays."
+        )
+    else:
+        image_instruction = (
+            "Image prompts: use elemental and object metaphors that embody the dosha's qualities — "
+            "wind/dry leaves/sand for vata, fire/brass/bright spice for pitta, "
+            "wet earth/river stone/dense greenery for kapha. "
+            "No human body parts, no faces, no text overlays."
+        )
     user = (
         f"DOSHA: {dosha['label']} ({dosha['key']})\n"
         f"TOPIC: {topic['label']} (type={topic['topic_type']})\n"
@@ -91,8 +105,7 @@ def generate_dosha_script(dosha: dict, topic: dict, chunks: list[dict],
         f"Write a reel script with EXACTLY {n_scenes} scenes educating viewers about "
         f"this topic. Each scene needs an English voiceover and an image prompt. "
         f"Voiceover: 1-2 flowing sentences, MAX 25 words. "
-        f"Image prompts: body parts (arms, legs, hands, skin texture) are acceptable "
-        f"and encouraged for prakriti/personality topics — no faces, no full body, no text overlays."
+        f"{image_instruction}"
         + (f"\n\nDoctor feedback to incorporate: {feedback}" if feedback else "")
     )
 
@@ -130,6 +143,8 @@ def main() -> int:
     parser.add_argument("--music")
     parser.add_argument("--music-ss", type=int, default=0)
     parser.add_argument("--out")
+    parser.add_argument("--cartoon", action="store_true",
+                        help="Use flat 2D Indian illustration style instead of cinematic")
     args = parser.parse_args()
 
     dosha, topic = _load_dosha_topic(args.dosha_key, args.topic_type)
@@ -156,7 +171,7 @@ def main() -> int:
         return 0
 
     from ayurpost.retrieval.search import HybridRetriever
-    from ayurpost.pipeline.veo import generate_reel_clips
+    from ayurpost.pipeline.veo import generate_reel_clips, CARTOON_STYLE, STYLE
     from ayurpost.pipeline.voice import synthesize_en_chirp
     from ayurpost.pipeline.assemble import build_veo_reel
 
@@ -172,12 +187,14 @@ def main() -> int:
     print(f"      {len(chunks)} chunks: {[c['chunk_id'] for c in chunks]}")
 
     print(f"[2/5] generating script ({args.model})...")
-    script = generate_dosha_script(dosha, topic, chunks, args.model, args.n_scenes)
+    script = generate_dosha_script(dosha, topic, chunks, args.model, args.n_scenes,
+                                    cartoon=args.cartoon)
     (out_dir / "script.json").write_text(script.model_dump_json(indent=2), encoding="utf-8")
     print(f"      hook: {script.hook!r}")
 
     print("[3/5] generating Veo clips...")
-    clips_dict = generate_reel_clips(script, dosha["key"], out_dir)
+    clips_dict = generate_reel_clips(script, dosha["key"], out_dir,
+                                     style=CARTOON_STYLE if args.cartoon else STYLE)
     clip_paths = [clips_dict["hook"]] + [
         clips_dict[f"scene_{i}"] for i in range(len(script.scenes))]
 

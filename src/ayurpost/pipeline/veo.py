@@ -42,6 +42,14 @@ STYLE = (
     "quality. No people, no text."
 )
 
+CARTOON_STYLE = (
+    "Soft 2D Indian illustration style: gentle muted pastel tones inspired by "
+    "traditional Pattachitra and Madhubani art, delicate clean outlines, warm earthy "
+    "palette of dusty terracotta, sage green and soft ochre, hand-painted watercolour "
+    "texture, calm and meditative mood. Stylized illustrated characters are welcome; "
+    "no text overlays."
+)
+
 # Season-level establishing-shot subjects for the hook clip.
 # These are intentionally scene/mood descriptions, not herb lists.
 HOOK_SUBJECT: dict[str, str] = {
@@ -95,21 +103,24 @@ def _poll(op, client) -> object:
     return vids[0]
 
 
-def generate_clip(subject: str, duration: int, out: Path, client=None) -> Path:
-    """Generate one Veo clip: subject + STYLE → MP4 at out.
+def generate_clip(subject: str, duration: int, out: Path, client=None,
+                  style: str = STYLE) -> Path:
+    """Generate one Veo clip: subject + style → MP4 at out.
 
     Args:
-        subject: The visual scene description (from image_prompt or HOOK_SUBJECT).
+        subject:  The visual scene description (from image_prompt or HOOK_SUBJECT).
         duration: Clip length in seconds. Must be 4, 6, or 8.
-        out: Output path for the MP4.
-        client: Optional pre-built genai.Client. Created from config if None.
+        out:      Output path for the MP4.
+        client:   Optional pre-built genai.Client. Created from config if None.
+        style:    Visual style string. Defaults to STYLE (cinematic). Pass
+                  CARTOON_STYLE for illustrated look.
     """
     if duration not in (4, 6, 8):
         raise ValueError(f"duration must be 4, 6 or 8 — got {duration}")
     if client is None:
         client = genai.Client(vertexai=True, project=config.GCP_PROJECT_ID,
                               location=config.GCP_LOCATION)
-    prompt = f"{subject}. {STYLE} Subtle natural motion. No people, no text."
+    prompt = f"{subject}. {style} Subtle natural motion. No people, no text."
     print(f"    veo ({duration}s): {prompt[:90]}...")
     op = client.models.generate_videos(
         model=MODEL,
@@ -130,7 +141,8 @@ def generate_clip(subject: str, duration: int, out: Path, client=None) -> Path:
 
 
 def generate_reel_clips(script: ReelScript, season_key: str,
-                        reel_dir: Path) -> dict[str, Path]:
+                        reel_dir: Path,
+                        style: str = STYLE) -> dict[str, Path]:
     """Generate all Veo clips for one reel (hook + all scenes).
 
     Skips clips that already exist on disk (safe to resume after failures).
@@ -150,7 +162,7 @@ def generate_reel_clips(script: ReelScript, season_key: str,
     if hook_path.exists():
         print(f"    skip (exists): {hook_path.name}")
     else:
-        generate_clip(HOOK_SUBJECT[season_key], DUR_HOOK, hook_path, client)
+        generate_clip(HOOK_SUBJECT[season_key], DUR_HOOK, hook_path, client, style)
     clips["hook"] = hook_path
 
     # Scene clips
@@ -159,7 +171,7 @@ def generate_reel_clips(script: ReelScript, season_key: str,
         if path.exists():
             print(f"    skip (exists): {path.name}")
         else:
-            generate_clip(scene.image_prompt, DUR_SCENE, path, client)
+            generate_clip(scene.image_prompt, DUR_SCENE, path, client, style)
         clips[f"scene_{i}"] = path
 
     return clips

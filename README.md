@@ -22,7 +22,7 @@ Each source text has a distinct OCR structure requiring a tailored segmentation 
 | **Charaka Samhita** (4 vols) | Mixed Arabic/Roman: `CHAPTER 1-title`, `CHAPTER II` | OCR joins (`CHAPTERI`), digit substitutions (`CHAPTER 1V` for IV); multi-sthana per volume; duplicate sthana headers in back-matter | Running header change detection for sthana transitions; one-way transition guard prevents re-entry after back-matter false triggers |
 | **Ashtanga Hridayam** (1 vol) | `CHAPTER N` (Arabic, clean) | No sthana markers; 30 chapters appear late in file (lines 19507+); first 19K lines are dense commentary | Simple body-start detection; no sthana needed |
 
-All three use **LlamaIndex SentenceSplitter** at a 1,024-token target with 128-token overlap after chapter text is extracted and noise-cleaned.
+All three use a two-pass approach: first **logical block extraction** (chapter and sthana boundaries via structural signals — headers, colophons, running headers), producing paragraph-level chunks. Paragraphs that fit within the 1,024-token limit are kept intact; only those that exceed it are further split with **LlamaIndex SentenceSplitter** (128-token overlap).
 
 ### Chunk Metadata
 
@@ -141,7 +141,15 @@ flowchart LR
     classDef publish fill:#dcfce7,stroke:#16a34a,color:#14532d
 ```
 
-Three roadmap YAMLs (seasonal, dosha education, clinic services) feed a calendar engine that assigns one of 20 rotating content slots to each posting date. The selected pillar and topic drive a retriever query with a dosha hard-filter, returning 6 grounding chunks. Claude Opus 4.8 writes a structured `ReelScript` (3 scenes, max 15 words each) citing only the supplied chunks. Veo generates one hyper-realistic 9:16 clip per scene; Chirp3-HD synthesises the voiceover; FFmpeg assembles them with xfade transitions and a ducked music bed. Sonnet 4.6 audits the script for groundedness and compliance before it reaches the doctor. In the Streamlit review app (Cloud Run, GCS-mounted artifacts), the doctor browses the monthly calendar, watches reels inline, and can prompt voiceover edits — which re-run Opus with the feedback, keeping the existing Veo clips to avoid re-generation cost.
+Three roadmap YAMLs (seasonal, dosha education, clinic services) drive the full pipeline:
+
+- **Scheduling** — `calendar_engine.py` assigns one of 20 rotating content slots to each posting date, selecting a pillar and topic
+- **Retrieval** — a dosha hard-filter Qdrant query returns 6 grounding chunks from the KB
+- **Script generation** — Claude Opus 4.8 writes a structured `ReelScript` (3 scenes, max 25 words each), citing only the supplied chunk IDs
+- **Video** — Veo 3.1 Lite generates one hyper-realistic 9:16 clip per scene (hook + 3 scenes, 8s each)
+- **Audio** — Chirp3-HD TTS synthesises the voiceover; FFmpeg assembles clips with xfade transitions and a ducked music bed
+- **Audit gate** — **every reel passes through `audit.py` before it reaches the doctor**: Claude Sonnet 4.6 checks each scene for groundedness (voiceover must be supported by its cited passages) and compliance (no cure/reversal/quantified-outcome claims); result written to `audit_report.json`
+- **Doctor review** — the Streamlit app (Cloud Run, GCS-mounted artifacts) shows reels on a monthly calendar; the doctor watches inline and can type voiceover feedback, which re-runs Opus keeping existing Veo clips
 
 ---
 
@@ -174,6 +182,7 @@ Prompt templates live inline in three orchestrator files — no separate templat
 
 **Iteration pattern:** constraints are tightened by editing the field `description` strings in `Scene` (shared) or the user message in each orchestrator. A change takes effect on the next generation run — no deploy needed. The eval suite's structural checks act as a regression guard (word count, chunk citation format) so constraint drift is caught automatically.
 
+### Misc
 **Error handling:** Veo high-load (code 8) handled via skip-existing-clips logic; Voyage batch token limits managed with 20-text cap + 0.15 word-count margin (Sanskrit BPE expansion up to 7×); Qdrant upserts batched at 200 points to stay under 33 MB payload limit; OCR garbled Roman numerals rejected via round-trip validation (`VL→45` fails because `to_roman(45)="XLV"≠"VL"`).
 
 **Cost (per reel):** ~$0.40 Veo (4 clips × 8s × $0.05/s) + ~$0.03 Opus script + ~$0.001 Voyage embeddings + ~$0.01 TTS. Total ≈ **$0.44/reel**.
