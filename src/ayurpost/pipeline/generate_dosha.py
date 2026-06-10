@@ -89,8 +89,10 @@ def generate_dosha_script(dosha: dict, topic: dict, chunks: list[dict],
         f"EDUCATIONAL ANGLE: {topic['query_angle'].strip()}\n\n"
         f"CONTEXT (ground all claims only in these passages):\n{context}\n\n"
         f"Write a reel script with EXACTLY {n_scenes} scenes educating viewers about "
-        f"this topic. Each scene needs an English voiceover and an image prompt (no "
-        f"people/faces/text). Voiceover: EXACTLY 1 punchy sentence, MAX 15 words."
+        f"this topic. Each scene needs an English voiceover and an image prompt. "
+        f"Voiceover: 1-2 flowing sentences, MAX 25 words. "
+        f"Image prompts: body parts (arms, legs, hands, skin texture) are acceptable "
+        f"and encouraged for prakriti/personality topics — no faces, no full body, no text overlays."
         + (f"\n\nDoctor feedback to incorporate: {feedback}" if feedback else "")
     )
 

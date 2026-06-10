@@ -86,7 +86,9 @@ def generate_services_script(service: dict, chunks: list[dict],
         f"Write a reel script with EXACTLY {n_scenes} scenes about this Ayurvedic service. "
         f"Explain what it is, why Ayurveda recommends it, and who benefits from it — "
         f"without making cure or outcome claims. Each scene needs an English voiceover "
-        f"and an image prompt (no people/faces/text). Voiceover: 1-2 flowing sentences, MAX 25 words."
+        f"and an image prompt. Voiceover: 1-2 flowing sentences, MAX 25 words. "
+        f"Image prompts: close-up of the treatment area (hands, oil on forehead, back) "
+        f"is acceptable — no full faces, no identifiable people, no text overlays."
         + (f"\n\nDoctor feedback to incorporate: {feedback}" if feedback else "")
     )
 

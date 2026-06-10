@@ -149,6 +149,31 @@ Three roadmap YAMLs (seasonal, dosha education, clinic services) feed a calendar
 
 **Task-specific (LLM-as-judge):** `audit.py` uses Claude Sonnet 4.6 as a structured judge after every generation. Checks: (1) groundedness — each scene's voiceover must be supported by its cited `chunk_id` passages; (2) compliance — no cure/reversal/quantified-outcome language (India Drugs & Magic Remedies Act / ASCI standards). Hook scene (scene 0) is exempt from groundedness; compliance applies to all scenes. Output: `AuditReport` with per-scene `SceneVerdict` and `overall_pass` boolean written to `audit_report.json`.
 
+**Eval suite (`src/ayurpost/eval/`):**
+
+| Category | File | What it checks | API calls |
+|---|---|---|---|
+| Structural | `eval_script.py` | hook non-empty, scene count vs manifest, voiceover ≤ 25 words, `grounded_chunk_ids` non-empty, disclaimer present | None |
+| Retrieval | `eval_retrieval.py` | Dosha hard-filter (no pitta chunks in vata query), keyword presence, chunk prefix in top-k | Qdrant + Voyage |
+| Compliance | `eval_audit.py` | 3 wellness-language cases must pass; 4 regulated-language cases must fail | Anthropic |
+| Groundedness | `eval_audit.py` | Faithful paraphrase → grounded; fabrication/exaggeration → ungrounded | Anthropic |
+
+Run with: `PYTHONPATH=src .venv/bin/python -m ayurpost.eval.run_evals [--category structural|retrieval|audit|all]`
+
+## Prompt Templates
+
+Prompt templates live inline in three orchestrator files — no separate template store:
+
+| File | Prompt governs |
+|---|---|
+| `pipeline/content.py` | Seasonal reel script — Opus system prompt + `Scene` Pydantic field descriptions |
+| `pipeline/generate_dosha.py` | Dosha education script — user message with dosha/topic/context injection |
+| `pipeline/generate_services.py` | Clinic services script — user message with service label/category/context injection |
+
+**Constraints encoded in prompts:** voiceover word cap (25 words), grounded-only claims (`grounded_chunk_ids` must reference supplied chunks; model is penalised if it cites chunk_ids not in context), no cure/reversal language, image prompt visual rules (no faces; body-part close-ups allowed for prakriti/service topics).
+
+**Iteration pattern:** constraints are tightened by editing the field `description` strings in `Scene` (shared) or the user message in each orchestrator. A change takes effect on the next generation run — no deploy needed. The eval suite's structural checks act as a regression guard (word count, chunk citation format) so constraint drift is caught automatically.
+
 **Error handling:** Veo high-load (code 8) handled via skip-existing-clips logic; Voyage batch token limits managed with 20-text cap + 0.15 word-count margin (Sanskrit BPE expansion up to 7×); Qdrant upserts batched at 200 points to stay under 33 MB payload limit; OCR garbled Roman numerals rejected via round-trip validation (`VL→45` fails because `to_roman(45)="XLV"≠"VL"`).
 
 **Cost (per reel):** ~$0.40 Veo (4 clips × 8s × $0.05/s) + ~$0.03 Opus script + ~$0.001 Voyage embeddings + ~$0.01 TTS. Total ≈ **$0.44/reel**.
