@@ -1,0 +1,167 @@
+# AyurPost roadmap — Dosha Education content map (DOSHA EDUCATION PILLAR)
+#
+# First of the three content-roadmap pillars (DOSHA EDUCATION / seasonal ailments
+# / clinic services). Defines the 5-day educational sub-cycle per dosha used by
+# the posting calendar engine.
+#
+# ============================ PROVISIONAL ====================================
+# Doctor unavailable at drafting (2026-06-10). Topic angles and retrieval queries
+# are text-canonical (grounded in our KB) and do not require doctor sign-off to
+# build. Doctor edits this file to correct angles; corrections take effect with
+# no code change. Nothing publishes without clinician sign-off.
+# =============================================================================
+#
+# Structure: 3 doshas × 5 topic_types = 15 posts per full dosha block.
+# Posting calendar: 2-week dosha block = 10 posts (cursor resumes across cycles).
+#
+# topic_types (in sub-cycle order):
+#   prakriti    — What is this dosha / body constitution
+#   personality — Mental and behavioural qualities
+#   ailment     — Disorders and symptoms when aggravated
+#   seasonal    — Which seasons aggravate and how to adapt
+#   remedy      — Diet, lifestyle, and therapies to balance
+#
+# Engine contract:
+#   - query_angle: fed to HybridRetriever as the retrieval search string
+#   - dosha_filter: list of dosha names used as HARD filter on doshas_mentioned
+#   - publishable: safe to generate content (all true here — no regulated claims)
+
+version: 1
+provisional: true
+doctor_reviewed: false
+
+doshas:
+  - key: vata
+    label: Vata
+    dosha_filter: [vata]
+
+    topics:
+      - key: vata_prakriti
+        topic_type: prakriti
+        label: What Is Vata? Your Airy Constitution
+        query_angle: >-
+          Vata dosha constitution — qualities of vata (dry, light, cold, mobile, subtle),
+          physical characteristics of vata prakriti body type, nature of vata as air and space
+        publishable: true
+
+      - key: vata_personality
+        topic_type: personality
+        label: The Vata Mind — Creative, Quick, and Restless
+        query_angle: >-
+          Vata personality traits — mental qualities of vata, creativity, quick thinking,
+          anxiety, restlessness, memory in vata types, vata psyche
+        publishable: true
+
+      - key: vata_ailment
+        topic_type: ailment
+        label: When Vata Goes Out of Balance
+        query_angle: >-
+          Vata aggravation diseases — joint pain, dryness, constipation, bloating,
+          insomnia, anxiety from vata imbalance, vata disorders symptoms
+        publishable: true
+
+      - key: vata_seasonal
+        topic_type: seasonal
+        label: Monsoon and Vata — Why Rains Disturb You
+        query_angle: >-
+          Vata aggravation in monsoon rainy season, varsha ritucharya vata,
+          seasonal vata management, wind season and vata prakopa
+        publishable: true
+
+      - key: vata_remedy
+        topic_type: remedy
+        label: How to Calm Vata — Warmth, Oil, and Routine
+        query_angle: >-
+          Vata pacifying diet and lifestyle — warm food, oil massage abhyanga,
+          routine for vata, sweet sour salty tastes balance vata, vata remedies
+        publishable: true
+
+  - key: pitta
+    label: Pitta
+    dosha_filter: [pitta]
+
+    topics:
+      - key: pitta_prakriti
+        topic_type: prakriti
+        label: What Is Pitta? Your Fiery Constitution
+        query_angle: >-
+          Pitta dosha constitution — qualities of pitta (hot, sharp, light, oily, liquid),
+          physical characteristics of pitta prakriti, fire and water elements in pitta
+        publishable: true
+
+      - key: pitta_personality
+        topic_type: personality
+        label: The Pitta Mind — Sharp, Driven, and Intense
+        query_angle: >-
+          Pitta personality traits — intelligence, leadership, anger, competitiveness,
+          pitta mental qualities, sharpness of intellect, pitta emotions
+        publishable: true
+
+      - key: pitta_ailment
+        topic_type: ailment
+        label: When Pitta Flares — Heat, Acidity, Inflammation
+        query_angle: >-
+          Pitta aggravation diseases — acidity, skin inflammation, rashes, liver issues,
+          fever, burning sensation, pitta disorders and symptoms
+        publishable: true
+
+      - key: pitta_seasonal
+        topic_type: seasonal
+        label: Summer and Pitta — Managing the Heat Season
+        query_angle: >-
+          Pitta aggravation in summer grishma season, autumn sharad pitta,
+          seasonal pitta management, heat season ritucharya pitta
+        publishable: true
+
+      - key: pitta_remedy
+        topic_type: remedy
+        label: How to Cool Pitta — Sweet, Bitter, and Calm
+        query_angle: >-
+          Pitta pacifying diet and lifestyle — cooling foods, sweet bitter astringent tastes,
+          avoiding heat and spicy food, pitta balance remedies, shirodhara for pitta
+        publishable: true
+
+  - key: kapha
+    label: Kapha
+    dosha_filter: [kapha]
+
+    topics:
+      - key: kapha_prakriti
+        topic_type: prakriti
+        label: What Is Kapha? Your Earthy Constitution
+        query_angle: >-
+          Kapha dosha constitution — qualities of kapha (heavy, slow, cold, oily, smooth),
+          physical characteristics of kapha prakriti, earth and water elements in kapha
+        publishable: true
+
+      - key: kapha_personality
+        topic_type: personality
+        label: The Kapha Mind — Calm, Loyal, and Steady
+        query_angle: >-
+          Kapha personality traits — patience, loyalty, stability, attachment, lethargy,
+          kapha mental qualities, memory strength in kapha types
+        publishable: true
+
+      - key: kapha_ailment
+        topic_type: ailment
+        label: When Kapha Accumulates — Heaviness and Congestion
+        query_angle: >-
+          Kapha aggravation diseases — congestion, sinus issues, weight gain, sluggish
+          digestion, mucus accumulation, kapha disorders and symptoms
+        publishable: true
+
+      - key: kapha_seasonal
+        topic_type: seasonal
+        label: Winter and Spring — Kapha's Tricky Seasons
+        query_angle: >-
+          Kapha aggravation in winter hemanta and spring vasanta, ritucharya kapha,
+          kapha accumulation in cold season and flare in spring
+        publishable: true
+
+      - key: kapha_remedy
+        topic_type: remedy
+        label: How to Energise Kapha — Light, Warm, and Active
+        query_angle: >-
+          Kapha pacifying diet and lifestyle — light warm food, pungent bitter astringent
+          tastes, exercise for kapha, vamana therapy kapha, kapha balance remedies
+        publishable: true

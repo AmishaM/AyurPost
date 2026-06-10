@@ -1,0 +1,37 @@
+# Secrets — never commit
+.env
+*.json
+ayurpost-*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# Large generated / binary artifacts
+data/ocr/
+data/chunks/
+data/generated/
+data/music/
+data/raw/
+*.jsonl
+*.mp4
+*.mp3
+*.wav
+*.png
+
+# Source PDFs and archives
+ayur-text-books/
+ayur-text-books.zip
+*.zip
+
+# IDE / session
+.claude/

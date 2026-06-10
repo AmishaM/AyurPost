@@ -1,0 +1,73 @@
+# AyurPost roadmap — posting calendar (CADENCE / ROTATION)
+#
+# Ties the three content pillars (dosha education / seasonal / clinic services)
+# into a publishing schedule. This is the cadence CONFIG, not a dated planner:
+# the roadmap engine expands it into actual dated posts at runtime, advancing the
+# dosha cursor and resolving the current season from live weather.
+#
+# Scope: autonomous REELS only. Flyers are owner-initiated/ad-hoc from owner text
+# (spec.md:7) and are not scheduled here.
+#
+# ============================ PROVISIONAL ====================================
+# Doctor/owner unavailable at drafting (2026-06-09). Frequency and rotation are
+# owner business decisions supplied for this draft; doctor-editable here or in the
+# DB copy with no code change. Every post still passes the publish gate (clinician
+# sign-off) before going live. See validation approach in memory.
+# =============================================================================
+#
+# Decisions captured (2026-06-09):
+#   posting frequency = 5 posts/week (weekdays)
+#   rotation          = ~2 weeks dosha -> 1 week seasonal -> 1 week services
+
+version: 1
+city: Bengaluru
+provisional: true
+doctor_reviewed: false
+
+posting:
+  days: [mon, tue, wed, thu, fri]   # weekdays
+  posts_per_week: 5
+  publish_gate: true                # doctor approves each reel before it publishes
+
+# Repeating 4-week macro-cycle = 20 posts.
+rotation:
+  cycle_weeks: 4
+  blocks:
+    - pillar: dosha_education       # 2 weeks = 10 posts
+      weeks: 2
+    - pillar: seasonal             # 1 week  = 5 posts
+      weeks: 1
+    - pillar: clinic_services      # 1 week  = 5 posts
+      weeks: 1
+
+fill_rules:
+  dosha_education:
+    source: dosha education (text-canonical; no config file — the 5-post sub-cycle)
+    sub_cycle: [prakriti, personality, ailment, seasonal, remedy]   # 1 post each
+    dosha_order: [vata, pitta, kapha]
+    # A 2-week block is 10 posts = 2 doshas, which does NOT divide the 15-post
+    # full pass (3 doshas x 5) evenly. The engine keeps a CURSOR into the
+    # (dosha, sub_cycle) sequence and resumes each dosha block where the last
+    # one ended:  cycle1 = vata,pitta | cycle2 = kapha,vata | cycle3 = pitta,kapha
+    # ... so all three doshas get equal coverage over time.
+    resume_with_cursor: true
+    retrieval: "topic_types includes <sub_cycle value> AND doshas_mentioned includes <dosha>"
+
+  seasonal:
+    source: seasonal_bengaluru.yaml
+    # Use the CURRENT Bengaluru season, not a blind calendar slot: pick the season
+    # whose `months` covers today, then let the live OpenWeatherMap reading confirm
+    # or shift it via that season's `weather_signature`. 5 posts from the season's
+    # ailments + remedy_angle.
+    select: current_season
+    retrieval: "doshas_mentioned includes <season.aggravated_dosha> AND topic_types in [seasonal, ailment, remedy]"
+
+  clinic_services:
+    source: clinic_services.yaml
+    select: "publishable == true"
+    # SHORTFALL (2026-06-09): only 4 services are currently publishable
+    # (virechana, vamana, shirodhara, massages) but a week needs 5 posts -> 1 slot
+    # short. Resolve by enumerating the specific massages into separate entries,
+    # or (after doctor approval) un-gating a program claim. Until then the engine
+    # fills the 4 available slots and leaves/repeats the 5th.
+    retrieval: "service is kb_groundable -> query its classical name; topic_types includes procedure/remedy"

@@ -1,0 +1,16 @@
+ayur-text-books
+data
+.venv
+.env
+.env.example
+*.json
+*.pdf
+__pycache__
+*.pyc
+*.pyo
+.git
+.claude
+docs
+tests
+Dockerfile
+.dockerignore

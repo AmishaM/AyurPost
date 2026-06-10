@@ -1,0 +1,111 @@
+# AyurPost roadmap — Bengaluru seasonal ailments map (SEASONAL PILLAR)
+#
+# One of the three content-roadmap pillars (dosha education / SEASONAL ailments /
+# clinic services). The roadmap engine reads this to pick a season -> aggravated
+# dosha -> ailment/remedy angle, then grounds the reel in the RAG knowledge base.
+#
+# ============================ PROVISIONAL ====================================
+# The clinic doctor was unavailable when this was drafted (2026-06-09). Every
+# season<->dosha<->ailment mapping below is a STARTING POINT for the pipeline to
+# run end-to-end. The doctor edits this file (or its DB-loaded copy) and the
+# corrections take effect with no code change. Nothing here is published without
+# a clinician's sign-off (health claims for a real clinic). See the validation
+# approach note in project memory.
+# =============================================================================
+#
+# Scope: Bengaluru only (matches CLINIC_CITY=Bengaluru and the OpenWeatherMap
+# key, which is location-specific). NOT valid for coastal Karnataka (Mangalore,
+# very heavy monsoon) or semi-arid North Karnataka — those are different climate
+# zones and would need their own tables.
+#
+# Provenance of the dosha cycle (corpus-grounded, verified 2026-06-09):
+#   The season -> aggravated-dosha column is the classical sanchaya->prakopa
+#   (accumulation->aggravation) cycle, confirmed against OUR texts' ritucharya
+#   passages, not asserted from memory:
+#     Kapha aggravates in spring  — "during spring, the accumulated kapha
+#                                    irritated by the strong rays of the sun"
+#     Vata  aggravates in rains   — "vayu is aggravated in the varsha (rainy)
+#                                    season"; "digestion is weakened and vata...
+#                                    aggravated during the rainy [season]"
+#     Pitta aggravates in autumn  — "pitta is accumulated, vitiated and pacified
+#                                    in rainy season, autumn and early winter";
+#                                    "deranged bile in autumn"
+#
+# Adaptation caveats (why this needs the doctor):
+#   1. Classical ritucharya assumes 6 North-Indian ritus. Bengaluru has ~5
+#      effective windows AND two rainy spells (SW monsoon Jun-Sep + a NE /
+#      post-monsoon peak in Oct-Nov; October is often Bengaluru's wettest month).
+#   2. Summer is where TEXT and CLINIC diverge: the classics call Grishma a
+#      Vata-ACCUMULATION season, but a Bengaluru April clinic sees HEAT/Pitta
+#      (rashes, acidity, dehydration). Both are recorded below under `summer`;
+#      the doctor picks the framing.
+#
+# Engine contract:
+#   - `months` drives the calendar default.
+#   - `weather_signature` lets the live OpenWeatherMap reading CONFIRM or SHIFT
+#     the season (e.g. an early monsoon onset) instead of trusting the calendar
+#     blindly. Thresholds are provisional Bengaluru norms, also doctor/data
+#     -tunable; they are guidance, not hard gates.
+#   - `aggravated_dosha` values map to the gazetteer dosha set
+#     (vata|pitta|kapha) so seasonal reels can reuse the doshas_mentioned
+#     retrieval filter.
+
+version: 1
+city: Bengaluru
+provisional: true              # set false only after doctor review
+doctor_reviewed: false
+
+seasons:
+  - key: winter
+    label: Winter
+    months: [12, 1]
+    nearest_ritu: hemanta-shishira
+    weather_signature: {temp_c_min: 14, temp_c_max: 29, humidity_pct: [35, 60], rain: low}
+    aggravated_dosha: [kapha]          # accumulating (sanchaya), not yet flared
+    secondary_dosha: [vata]            # cold + dry
+    ailments: [dry skin, joint stiffness, low immunity build-up]
+    remedy_angle: warm nourishing food, oil massage (abhyanga); strongest-agni season
+    note: Kapha accumulates silently in the cold; sets up the spring flare.
+
+  - key: spring
+    label: Spring
+    months: [2, 3]
+    nearest_ritu: vasanta
+    weather_signature: {temp_c_min: 17, temp_c_max: 33, humidity_pct: [30, 55], rain: low}
+    aggravated_dosha: [kapha]          # prakopa — corpus-confirmed
+    ailments: [colds, sinus congestion, allergies, asthma, cough]
+    remedy_angle: light warm food, reduce dairy and heavy/sweet food; gentle detox
+
+  - key: summer
+    label: Summer
+    months: [4, 5]
+    nearest_ritu: grishma
+    weather_signature: {temp_c_min: 21, temp_c_max: 36, humidity_pct: [30, 60], rain: low}
+    aggravated_dosha: [pitta]          # CLINICAL framing (heat) — see note
+    classical_dosha: [vata]            # TEXT framing (Grishma = vata sanchaya)
+    ailments: [heatstroke, dehydration, acidity, prickly heat, skin rash]
+    remedy_angle: cooling foods, hydration, sweet/bitter tastes; avoid midday sun
+    note: >-
+      Doctor to confirm framing. Classics call this Vata-accumulation; Bengaluru
+      clinic reality is heat/Pitta. Provisional choice = Pitta (patient-facing).
+
+  - key: monsoon
+    label: SW Monsoon
+    months: [6, 7, 8, 9]
+    nearest_ritu: varsha
+    weather_signature: {temp_c_min: 19, temp_c_max: 29, humidity_pct: [70, 90], rain: high}
+    aggravated_dosha: [vata]           # prakopa — corpus-confirmed
+    secondary_dosha: [pitta]           # accumulating this season
+    ailments: [joint pain, arthritis flares, indigestion, colds, fevers]
+    remedy_angle: vata-pacifying warm easily-digestible food; protect weak agni
+    note: Agni is weakest now (corpus); classical Panchakarma / vata-management season.
+
+  - key: post_monsoon
+    label: Post-monsoon
+    months: [10, 11]
+    nearest_ritu: sharad
+    weather_signature: {temp_c_min: 18, temp_c_max: 30, humidity_pct: [65, 85], rain: moderate}
+    aggravated_dosha: [pitta]          # prakopa — corpus-confirmed
+    ailments: [acidity, inflammatory skin conditions, allergic fevers]
+    remedy_angle: pitta-pacifying cooling food, bitter/sweet tastes; classical virechana season
+    note: Bengaluru's second rain peak (NE monsoon); pitta accumulated in the rains now flares.

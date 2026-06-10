@@ -1,0 +1,85 @@
+# AyurPost roadmap — clinic services map (CLINIC SERVICES PILLAR)
+#
+# Third of the three content-roadmap pillars (dosha education / seasonal ailments
+# / CLINIC SERVICES). The roadmap engine reads this to schedule service-promotion
+# reels, grounded where possible in the RAG knowledge base.
+#
+# ============================ PROVISIONAL ====================================
+# Doctor unavailable at drafting (2026-06-09). Service list supplied by the owner;
+# wording is doctor-editable here or in its DB-loaded copy with no code change.
+# Nothing publishes without clinician sign-off. See validation approach in memory.
+# =============================================================================
+#
+# COMPLIANCE GATE (read before publishing):
+#   Some services carry outcome/disease claims that are regulated for advertising
+#   in India. Entries with `compliance_flag: true` are `publishable: false` and
+#   MUST NOT be turned into published content until the doctor approves the exact
+#   wording. Pointer to verify (NOT legal advice): the Drugs & Magic Remedies
+#   (Objectionable Advertisements) Act, 1954 names diabetes among diseases whose
+#   advertised remedies are restricted; ASCI polices misleading health claims and
+#   quantified outcome guarantees ("in 10 days") on social media. Verify with the
+#   doctor / a compliance check before flipping publishable to true.
+#
+# Schema per service:
+#   key            machine id
+#   label          verbatim owner wording (kept exactly as given, per decision)
+#   category       panchakarma | massage | program
+#   kb_groundable  true if classical texts describe it (reel can cite the KB)
+#   compliance_flag true if the claim is regulated/risky
+#   publishable    false while gated; doctor flips to true after approving wording
+
+version: 1
+provisional: true
+doctor_reviewed: false
+
+services:
+  - key: virechana
+    label: Virechana
+    category: panchakarma
+    kb_groundable: true            # therapeutic purgation — described in Charaka/Sushruta
+    compliance_flag: false
+    publishable: true
+
+  - key: vamana
+    label: Vamana
+    category: panchakarma
+    kb_groundable: true            # therapeutic emesis — described in Charaka/Sushruta
+    compliance_flag: false
+    publishable: true
+
+  - key: shirodhara
+    label: Shirodhara
+    category: panchakarma
+    kb_groundable: true
+    compliance_flag: false
+    publishable: true
+
+  - key: abhyanga
+    label: Abhyanga
+    category: massage
+    kb_groundable: true            # oil massage described extensively in classical texts
+    compliance_flag: false
+    publishable: true
+    note: Full-body warm oil massage; classical references in Charaka and Sushruta ritucharya.
+
+  - key: reverse_diabetes
+    label: Reverse diabetics            # owner's exact words — kept verbatim per decision
+    category: program
+    kb_groundable: true                  # Madhumeha/Prameha management exists in the texts
+    compliance_flag: true                # "reverse/cure diabetes" is a regulated ad claim
+    publishable: false                   # GATED — doctor must approve wording first
+    suggested_reframe: Ayurvedic diabetes management / lifestyle support
+    note: >-
+      Drugs & Magic Remedies Act schedule names diabetes. Do not publish as a
+      cure/reversal claim. Doctor to approve final wording before publishable=true.
+
+  - key: weight_loss_10_days
+    label: Weight loss in 10 days        # owner's exact words — kept verbatim per decision
+    category: program
+    kb_groundable: true                  # Sthaulya (obesity) management exists in the texts
+    compliance_flag: true                # quantified outcome guarantee — high-risk ad claim
+    publishable: false                   # GATED — doctor must approve wording first
+    suggested_reframe: Ayurvedic weight-management programme
+    note: >-
+      Specific-timeframe outcome guarantees are flagged as misleading by ASCI.
+      Doctor to approve final wording before publishable=true.

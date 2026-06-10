@@ -1,0 +1,158 @@
+# AyurPost gazetteer — controlled vocabulary for deterministic entity extraction
+#
+# Used by the CODE pass (not the LLM) to fill the entity metadata fields on each
+# chunk. The dosha vocabulary below drives `doshas_mentioned`, which is the ONE
+# HARD retrieval filter — so false positives here directly corrupt recall.
+#
+# Provenance: corpus-grounded, verified 2026-06-09.
+#   Method: counted every candidate synonym (word-boundary, NFKD-folded) across
+#   Sushruta Vols 1-3 (Document AI OCR) + Charaka Vol 1 + Ashtanga Hridayam, and
+#   inspected the usage context of every rare term.
+#   Result: the classical Sanskrit dosha synonyms (anila, marut, pavana, samirana,
+#   prabhanjana, tejas, anala, soma, balasa) were DROPPED — in these English
+#   translations they appear as the physical element "air/wind/fire" or are
+#   otherwise ambiguous (soma = moon/plant/body), not as dosha labels. Keeping them
+#   would mis-tag five-elements-theory chunks. `sleshma`/`shleshma` was KEPT: it is
+#   Bhishagratna's primary word for Kapha in Sushruta (51 hits) and is not obvious
+#   from memory. `vayu` is the *dominant* word for the Vata dosha in Sushruta (1295
+#   hits, more than "vata" itself).
+#
+# Matcher contract (to honor when the matcher is built):
+#   Both the corpus text AND these terms are normalized before matching —
+#   lowercase, NFKD diacritic strip, collapse internal hyphens/whitespace, then
+#   word-boundary phrase match. Accents are therefore NOT listed here (vāta folds
+#   to vata). Forms that differ by a REAL letter are distinct and ARE listed
+#   separately (sleshma vs shleshma; kapham vs kapha). Derived stems (vataja,
+#   pittaja, kaphaja) are listed explicitly because \b-matching won't reach them
+#   from the root.
+
+version: 1
+
+doshas:
+  vata:  [vata, vataja, vatika, vata-dosha, vayu]
+  pitta: [pitta, pittam, pittaja, paittika, pitta-dosha]
+  kapha: [kapha, kapham, kaphaja, kaphic, kapha-dosha, sleshma, shleshma, shleshman]
+
+# dosha_combinations — multi-dosha conditions (dual + tridosha).
+# Corpus-grounded, verified 2026-06-09. Value set is CLOSED and complete:
+#   vata-pitta | vata-kapha | pitta-kapha | tridosha
+# This is the saptavidha (sevenfold) prakriti enumeration minus the 3 singles
+# (already in doshas_mentioned): C(3,2)=3 duals + 1 tridosha. No other pair exists.
+#
+# Extraction rule (CODE pass):
+#   1. explicit pair token present        -> that pair
+#   2. dual-classifier token present      -> resolve the pair from doshas_mentioned,
+#                                            but ONLY when doshas_mentioned holds exactly 2
+#                                            (the two fields reinforce each other)
+#   3. tridosha-classifier token present  -> "tridosha"
+# Both hyphenated and concatenated surface forms are listed because the corpus
+# carries both (vata-pitta 19, vatapitta 4) and the matcher's separator handling
+# is not yet finalized — listing both is matcher-independent and safe.
+# Note: rakta is NOT a dosha. Tokens like "vata-pitta-raktaja" still yield the
+# vata-pitta pair; the rakta (blood) axis is a separate dushya, out of scope here.
+dosha_combinations:
+  pairs:
+    vata-pitta:  [vata-pitta, vatapitta]
+    vata-kapha:  [vata-kapha, vatakapha]
+    pitta-kapha: [pitta-kapha, pittakapha]
+  dual_classifiers:     [dvandvaja, samsarga, samsargaja]   # pair <- doshas_mentioned (when ==2)
+  tridosha_classifiers: [sannipata, sannipataja, tridosha, tridoshaja]   # -> "tridosha"
+
+# ── herbs / dravya — fills `herbs` (SOFT signal, NOT a hard filter) ──────────
+# Provenance: corpus-grounded across Sushruta vols 1-3 (folded word-boundary
+# counts), verified 2026-06-09. Inclusion = >=4 corpus hits AND the medicinal-
+# substance sense clearly dominant. Forms are NFKD-folded (no accents) per the
+# matcher contract above. PROVISIONAL — domain judgment, clinician-reviewable
+# (these tags are internal retrieval metadata, never published content).
+# DROPPED as polysemous (would mis-tag non-drug passages, same logic as the
+# dropped dosha synonyms): arka (sun/distillate), bala (strength — see age_phase
+# note), vacha (speech), nagara (city), kola (a measure / hog). Food-grains
+# yava/masha/mudga/shali are KEPT (dietary dravya; weight-measure sense is a minority).
+herbs:
+  pippali:    [pippali]          # long pepper
+  maricha:    [maricha]          # black pepper
+  saindhava:  [saindhava]        # rock salt
+  haridra:    [haridra]          # turmeric
+  chitraka:   [chitraka]         # Plumbago zeylanica
+  vidanga:    [vidanga]          # Embelia ribes
+  madhuka:    [madhuka]          # liquorice
+  nimba:      [nimba, nimva]     # neem
+  trivrit:    [trivrit]          # Operculina turpethum
+  triphala:   [triphala]         # three-myrobalan formulation
+  haritaki:   [haritaki]         # Terminalia chebula
+  musta:      [musta]            # Cyperus rotundus
+  chandana:   [chandana]         # sandalwood
+  amalaka:    [amalaka, amalaki] # Emblica officinalis (amla)
+  madana:     [madana]           # Randia dumetorum
+  draksha:    [draksha]          # grapes / raisins
+  danti:      [danti]            # Baliospermum montanum
+  guduchi:    [guduchi]          # Tinospora cordifolia
+  khadira:    [khadira]          # Acacia catechu
+  bhallataka: [bhallataka]       # Semecarpus anacardium
+  sariva:     [sariva]           # Hemidesmus indicus
+  priyangu:   [priyangu]         # Callicarpa macrophylla
+  kapittha:   [kapittha]         # wood-apple
+  patala:     [patala]           # Stereospermum suaveolens
+  manjishtha: [manjishtha]       # Rubia cordifolia
+  lodhra:     [lodhra]           # Symplocos racemosa
+  dadima:     [dadima]           # pomegranate
+  guggulu:    [guggulu]          # Commiphora mukul
+  ativisha:   [ativisha]         # Aconitum heterophyllum
+  punarnava:  [punarnava]        # Boerhavia diffusa
+  eranda:     [eranda]           # castor
+  kantakari:  [kantakari]        # Solanum xanthocarpum
+  gokshura:   [gokshura]         # Tribulus terrestris
+  shigru:     [shigru]           # drumstick / Moringa
+  shatavari:  [shatavari]        # Asparagus racemosus
+  alavu:      [alavu]            # bottle gourd
+  kushmanda:  [kushmanda]        # ash gourd
+  brihati:    [brihati]          # Solanum indicum
+  ushira:     [ushira]           # Vetiveria zizanioides
+  jatamansi:  [jatamansi]        # Nardostachys jatamansi
+  mudga:      [mudga]            # green gram
+  masha:      [masha]            # black gram
+  yava:       [yava]             # barley
+  shali:      [shali]            # rice
+  badara:     [badara]           # jujube
+
+# ── diseases / roga — fills `diseases` (SOFT signal, NOT a hard filter) ──────
+# Same provenance / threshold / contract as herbs. PROVISIONAL — clinician-reviewable.
+# DROPPED: udara (mostly anatomical "abdomen"), shula (pain / spear — ambiguous).
+# NOTE: kushtha is also the herb Saussurea costus; the skin-disease sense dominates
+# in this corpus so it is kept as a disease, but the collision is real.
+diseases:
+  kushtha:    [kushtha]          # skin diseases (also a herb — see note)
+  prameha:    [prameha, meha]    # urinary disorders / diabetes family
+  gulma:      [gulma]            # abdominal lump / tumour
+  vrana:      [vrana]            # ulcer / wound
+  granthi:    [granthi]          # cyst / glandular swelling
+  vidradhi:   [vidradhi]         # abscess
+  atisara:    [atisara]          # diarrhoea
+  pidaka:     [pidaka]           # pustule / boil
+  visarpa:    [visarpa]          # erysipelas / spreading inflammation
+  pandu:      [pandu]            # anaemia
+  krimi:      [krimi]            # worms / parasites
+  grahani:    [grahani]          # sprue / malabsorption
+  apasmara:   [apasmara]         # epilepsy
+  kamala:     [kamala]           # jaundice
+  bhagandara: [bhagandara]       # fistula-in-ano
+  kshaya:     [kshaya]           # consumption / wasting
+  kasa:       [kasa]             # cough
+  jvara:      [jvara]            # fever
+  slipada:    [slipada]          # filariasis / elephantiasis
+  kilasa:     [kilasa]           # vitiligo / leucoderma
+  unmada:     [unmada]           # insanity
+  galaganda:  [galaganda]        # goitre
+  arsha:      [arsha]            # haemorrhoids / piles
+
+# --- DECIDED 2026-06-09 — age_phase is NOT a gazetteer field (no key emitted) ---
+# Corpus-proven unbuildable as a term lookup: the Sanskrit category word is absent
+# (vayah 0, vaya 4), and EVERY stage token is contaminated —
+#   bala     = strength / a herb (not only "child")
+#   madhyama = "middle" of anything (path, dose), not middle-age
+#   vriddhi  = dosha INCREASE (not old age);  vriddha = the "old" Sushruta recension / a herb
+#   kaumara  = the pediatrics SPECIALTY (Kaumara-bhritya), not a patient's life-stage
+# A gazetteer here would be mostly false positives. The actual age->dosha mapping
+# (Kapha childhood / Pitta middle age / Vata old age) lives in ~1 PROSE passage, so it
+# is a content judgment, not a term lookup -> served by Haiku's topic_types:age_dosha
+# (the Rule-6 split). Do not re-add as a gazetteer field without a new reason.
