@@ -78,15 +78,15 @@ RRF (Reciprocal Rank Fusion) merges dense + sparse scores; dosha filter is then 
 
 ```mermaid
 flowchart LR
-    A[📄 Scanned PDFs\nSushruta · Charaka · Ashtanga]:::source -->|Split into 15-page chunks\nDocument AI inline limit| B[🔍 Google Document AI\nDocument OCR processor]:::ocr
+    A[📄 Scanned PDFs\nSushruta · Charaka · Ashtanga]:::source -->|15-page chunks| B[🔍 Google Document AI\nDocument OCR processor]:::ocr
     B -->|Stitch per volume| C[📝 OCR Text Files\n8 volumes]:::ocr
-    C -->|Sthana-aware chapter segmentation\nRoman numeral round-trip validation| D[⚙️ chunker.py / chunk_book.py\nSentenceSplitter 1024 tok]:::process
-    D -->|4785 chunks with structural metadata| E[🗃️ all_chunks.jsonl]:::store
-    E -->|Deterministic gazetteer\nword-boundary exact match| F[🏷️ tagger.py\ndosha · herb · disease tags]:::process
-    F -->|Batch embed\n20 texts per request| G[🚀 Voyage AI\nvoyage-4-large dense]:::embed
+    C -->|Sthana-aware segmentation| D[⚙️ chunker.py / chunk_book.py\nSentenceSplitter 1024 tok]:::process
+    D -->|4785 chunks + structural metadata| E[🗃️ all_chunks.jsonl]:::store
+    E -->|Deterministic gazetteer match| F[🏷️ tagger.py\ndosha · herb · disease tags]:::process
+    F -->|Batch embed 20 texts/request| G[🚀 Voyage AI\nvoyage-4-large dense]:::embed
     F -->|Sparse token weights| H[📊 FastEmbed BM25\nsparse vectors]:::embed
-    G & H -->|Upsert 200 points/batch\n33MB payload limit| I[(🔷 Qdrant Cloud\nayurvedic_kb_v3\nhybrid collection)]:::vector
-    I -->|Enable O1 filter speed\nfor dosha hard-filter| J[🔑 Payload indexes\nchunk_id · dosha · herb · disease]:::vector
+    G & H -->|Upsert 200 points/batch| I[(🔷 Qdrant Cloud\nayurvedic_kb_v3\nhybrid collection)]:::vector
+    I -->|Fast dosha hard-filter| J[🔑 Payload indexes\nchunk_id · dosha · herb · disease]:::vector
 
     classDef source fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
     classDef ocr fill:#fef3c7,stroke:#d97706,color:#78350f
@@ -101,28 +101,28 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Schedule["📅 Schedule"]
-        A[📋 Roadmap YAMLs\nSeasonal · Dosha · Services]:::yaml -->|Date → slot mapping\n20-slot cycle| B[🗓️ calendar_engine.py\nDosha cursor + season picker]:::sched
+        A[📋 Roadmap YAMLs\nSeasonal · Dosha · Services]:::yaml -->|Date to slot mapping| B[🗓️ calendar_engine.py\n20-slot posting cycle]:::sched
     end
 
     subgraph Generation["⚙️ Generation"]
         B -->|Pillar + topic descriptor| C[🔧 generate.py\ngenerate_dosha.py\ngenerate_services.py]:::gen
         C -->|Query + dosha filter| D[🔍 HybridRetriever\nRRF fusion · dosha hard-filter]:::retrieval
-        D -->|Top-6 grounding chunks| E[🧠 Claude Opus 4.8\nStructured ReelScript\n3 scenes · MAX 15 words each]:::llm
+        D -->|Top-6 grounding chunks| E[🧠 Claude Opus 4.8\nStructured ReelScript\n3 scenes · MAX 15 words]:::llm
         E -->|Image prompt per scene| F[🎬 Veo 3.1 Lite\nHyper-realistic 9:16 · 8s clips]:::media
         E -->|Voiceover text per scene| G[🎙️ Chirp3-HD TTS\nen-IN · phonetic substitutions]:::media
-        F & G -->|xfade + music bed\nsmooth fade-out| H[🎞️ FFmpeg assembly]:::media
-        H -->|DRAFT — pending sign-off| I[📦 reel.mp4]:::artifact
-        I -->|Per-scene groundedness\n+ compliance check| J[✅ audit.py\nSonnet 4.6 structured judge]:::audit
+        F & G -->|xfade + music bed + fade| H[🎞️ FFmpeg assembly]:::media
+        H -->|DRAFT pending sign-off| I[📦 reel.mp4]:::artifact
+        I -->|Per-scene groundedness check| J[✅ audit.py\nSonnet 4.6 structured judge]:::audit
     end
 
     subgraph Review["👩‍⚕️ Doctor Review"]
         I -->|GCS volume mount| K[🖥️ Streamlit App\nCloud Run · GCS]:::app
         K -->|Tiles by generation date| L[📆 Monthly calendar\ninline video player]:::app
         L --> M{Edit?}:::decision
-        M -- Yes -->|Free-text prompt| N[💬 Doctor feedback\nin chat panel]:::feedback
+        M -->|Yes - doctor types feedback| N[💬 Chat panel\nfree-text prompt]:::feedback
         N -->|Inject feedback into Opus\nkeep existing Veo clips| O[🔄 New script + TTS\nreassemble reel]:::gen
         O --> K
-        M -- No --> P[✅ Ready to publish]:::publish
+        M -->|No| P[✅ Ready to publish]:::publish
     end
 
     classDef yaml fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
