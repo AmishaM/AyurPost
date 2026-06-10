@@ -34,8 +34,8 @@ from ayurpost import config
 
 class Scene(BaseModel):
     voiceover_en: str = Field(description="English voiceover narration for this scene. "
-                              "EXACTLY 1 punchy sentence, MAX 15 words. "
-                              "Must fit inside a 7-second clip read at natural pace.")
+                              "1-2 flowing sentences, MAX 25 words. "
+                              "Must fit inside a 10-second clip read at natural pace.")
     voiceover_kn: str = Field(description="Faithful Kannada (ಕನ್ನಡ) translation of "
                               "voiceover_en, in Kannada script. Same meaning, natural phrasing.")
     image_prompt: str = Field(description="A concrete visual scene to illustrate this "

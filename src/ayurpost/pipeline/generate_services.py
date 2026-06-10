@@ -86,7 +86,7 @@ def generate_services_script(service: dict, chunks: list[dict],
         f"Write a reel script with EXACTLY {n_scenes} scenes about this Ayurvedic service. "
         f"Explain what it is, why Ayurveda recommends it, and who benefits from it — "
         f"without making cure or outcome claims. Each scene needs an English voiceover "
-        f"and an image prompt (no people/faces/text). Voiceover: EXACTLY 1 punchy sentence, MAX 15 words."
+        f"and an image prompt (no people/faces/text). Voiceover: 1-2 flowing sentences, MAX 25 words."
         + (f"\n\nDoctor feedback to incorporate: {feedback}" if feedback else "")
     )
 
@@ -172,7 +172,7 @@ def main() -> int:
     print(f"      hook: {script.hook!r}")
 
     print("[3/5] generating Veo clips...")
-    clips_dict = generate_reel_clips(script, "winter", out_dir)  # neutral seasonal hook
+    clips_dict = generate_reel_clips(script, service["key"], out_dir)
     clip_paths = [clips_dict["hook"]] + [
         clips_dict[f"scene_{i}"] for i in range(len(script.scenes))]
 

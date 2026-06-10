@@ -169,8 +169,9 @@ def build_veo_reel(
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
         if music is None:
-            # Voice only — trim to full video duration, fade out audio at the end.
-            fade_st = max(0.0, vid_dur - 2.5)
+            # Voice only — extend video to full audio duration if needed, then fade out.
+            out_dur = max(vid_dur, vo_dur)
+            fade_st = max(0.0, out_dur - 2.5)
             _run([
                 "ffmpeg", "-y",
                 "-i", str(joined_vid),
@@ -179,27 +180,28 @@ def build_veo_reel(
                 "[0:v]tpad=stop_mode=clone:stop_duration=10[vext];"
                 f"[1:a]afade=t=out:st={fade_st:.2f}:d=2.5[aout]",
                 "-map", "[vext]", "-map", "[aout]",
-                "-t", f"{vid_dur:.3f}",
+                "-t", f"{out_dur:.3f}",
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24",
                 "-c:a", "aac", "-b:a", "128k",
                 str(out_path),
             ])
         else:
             # Voice + music bed: voice leads, music continues to end of video, then fades.
+            out_dur  = max(vid_dur, vo_dur)
             fade_st  = max(0.0, vo_dur - 0.5)
-            fade_dur = max(2.0, vid_dur - fade_st)
+            fade_dur = max(2.0, out_dur - fade_st)
             _run([
                 "ffmpeg", "-y",
                 "-i", str(joined_vid),
                 "-i", str(vo),
-                "-ss", str(music_ss), "-t", str(int(vid_dur) + 4), "-i", str(music),
+                "-ss", str(music_ss), "-t", str(int(out_dur) + 4), "-i", str(music),
                 "-filter_complex",
                 "[0:v]tpad=stop_mode=clone:stop_duration=10[vext];"
                 "[2:a]volume=0.15[bed];"
                 "[1:a][bed]amix=inputs=2:duration=longest:dropout_transition=2[mix];"
                 f"[mix]afade=t=out:st={fade_st:.2f}:d={fade_dur:.2f}[aout]",
                 "-map", "[vext]", "-map", "[aout]",
-                "-t", f"{vid_dur:.3f}",
+                "-t", f"{out_dur:.3f}",
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24",
                 "-c:a", "aac", "-b:a", "128k",
                 str(out_path),

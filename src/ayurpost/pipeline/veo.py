@@ -62,6 +62,15 @@ HOOK_SUBJECT: dict[str, str] = {
                     "intense golden light, heat shimmer above stone floor"),
     "kapha":       ("Lush green Bengaluru garden after morning mist, heavy dewy leaves, "
                     "cool still air, soft diffused white light"),
+    # clinic service hooks
+    "abhyanga":    ("Ayurvedic massage table with warm sesame oil in a brass bowl, "
+                    "soft oil lamp glow, clean white linen, serene treatment room"),
+    "shirodhara":  ("Shirodhara vessel with golden oil dripping in a thin stream, "
+                    "soft candlelight, polished copper, peaceful clinic interior"),
+    "virechana":   ("Neatly arranged Ayurvedic herbal preparations in terracotta bowls, "
+                    "warm earthy tones, soft natural light through a clinic window"),
+    "vamana":      ("Steam rising from a traditional Ayurvedic herbal decoction vessel, "
+                    "dried herbs and roots on a wooden surface, warm amber light"),
 }
 
 
