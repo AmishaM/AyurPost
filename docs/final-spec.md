@@ -37,46 +37,66 @@ RRF (Reciprocal Rank Fusion) merges dense + sparse scores before the dosha filte
 ### Diagram 1 — Knowledge Base Ingestion
 
 ```mermaid
-flowchart TD
-    A[Scanned PDFs\nSushruta · Charaka · Ashtanga] --> B[Google Document AI\n15-page chunks]
-    B --> C[OCR Text Files\nper volume]
-    C --> D[chunker.py / chunk_book.py\nsthana segmentation\n+ SentenceSplitter]
-    D --> E[all_chunks.jsonl\n4785 chunks]
-    E --> F[tagger.py\nGazetteer entity tagging\ndosha · herb · disease]
-    F --> G[Voyage AI\nvoyage-4-large\ndense embeddings]
-    F --> H[BM25 sparse\nFastEmbed]
-    G & H --> I[Qdrant Cloud\nhybrid collection\nawaiturvedic_kb_v3]
-    I --> J[chunk_id keyword index\ndosha · herb · disease\npayload indexes]
+flowchart LR
+    A[📄 Scanned PDFs\nSushruta · Charaka · Ashtanga]:::source --> B[🔍 Google Document AI\n15-page chunks]:::ocr
+    B --> C[📝 OCR Text Files\nper volume]:::ocr
+    C --> D[⚙️ chunker.py / chunk_book.py\nsthana segmentation\n+ SentenceSplitter]:::process
+    D --> E[🗃️ all_chunks.jsonl\n4785 chunks]:::store
+    E --> F[🏷️ tagger.py\nGazetteer entity tagging\ndosha · herb · disease]:::process
+    F --> G[🚀 Voyage AI\nvoyage-4-large\ndense embeddings]:::embed
+    F --> H[📊 BM25 sparse\nFastEmbed]:::embed
+    G & H --> I[(🔷 Qdrant Cloud\nhybrid collection\nayurvedic_kb_v3)]:::vector
+    I --> J[🔑 Payload indexes\nchunk_id · dosha\nherb · disease]:::vector
+
+    classDef source fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
+    classDef ocr fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef process fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef store fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef embed fill:#ffe4e6,stroke:#e11d48,color:#881337
+    classDef vector fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
 ```
 
 ### Diagram 2 — Content Generation & Review
 
 ```mermaid
-flowchart TD
-    subgraph Schedule
-        A[seasonal_bengaluru.yaml\ndosha_education.yaml\nclinic_services.yaml] --> B[calendar_engine.py\n20-slot posting cycle]
+flowchart LR
+    subgraph Schedule["📅 Schedule"]
+        A[📋 YAMLs\nSeasonal · Dosha\nServices]:::yaml --> B[🗓️ calendar_engine.py\n20-slot posting cycle]:::sched
     end
 
-    subgraph Generation
-        B --> C[generate.py / generate_dosha.py\ngenerate_services.py]
-        C --> D[HybridRetriever\nRRF + dosha hard-filter]
-        D --> E[Claude Opus 4.8\ngrounded ReelScript\n3 scenes · MAX 15 words/scene]
-        E --> F[Veo 3.1 Lite\nhyper-realistic 9:16 clips]
-        E --> G[Chirp3-HD TTS\nen-IN · phonetic substitutions]
-        F & G --> H[FFmpeg\nxfade · music bed · smooth fade]
-        H --> I[reel.mp4\nDRAFT — pending sign-off]
-        I --> J[audit.py\nSonnet 4.6 groundedness\n+ compliance judge]
+    subgraph Generation["⚙️ Generation"]
+        B --> C[🔧 generate.py\ngenerate_dosha.py\ngenerate_services.py]:::gen
+        C --> D[🔍 HybridRetriever\nRRF + dosha hard-filter]:::retrieval
+        D --> E[🧠 Claude Opus 4.8\ngrounded ReelScript\n3 scenes · MAX 15 words]:::llm
+        E --> F[🎬 Veo 3.1 Lite\nhyper-realistic 9:16 clips]:::media
+        E --> G[🎙️ Chirp3-HD TTS\nen-IN voiceover]:::media
+        F & G --> H[🎞️ FFmpeg\nxfade · music · fade]:::media
+        H --> I[📦 reel.mp4\nDRAFT]:::artifact
+        I --> J[✅ audit.py\nSonnet 4.6 judge\ngroundedness + compliance]:::audit
     end
 
-    subgraph Review
-        I --> K[Streamlit App\nCloud Run · GCS mount]
-        K --> L[Doctor monthly calendar\ninline video preview]
-        L --> M{Edit needed?}
-        M -- Yes --> N[Doctor types feedback\nin chat panel]
-        N --> O[Re-run Opus\nsame Veo clips\nnew TTS + reassemble]
+    subgraph Review["👩‍⚕️ Doctor Review"]
+        I --> K[🖥️ Streamlit App\nCloud Run · GCS]:::app
+        K --> L[📆 Monthly calendar\ninline video preview]:::app
+        L --> M{Edit?}:::decision
+        M -- Yes --> N[💬 Doctor feedback\nin chat panel]:::feedback
+        N --> O[🔄 Re-run Opus\nnew TTS · same clips]:::gen
         O --> K
-        M -- No --> P[Reel approved\nready to publish]
+        M -- No --> P[✅ Ready to publish]:::publish
     end
+
+    classDef yaml fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
+    classDef sched fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef gen fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef retrieval fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef llm fill:#ffe4e6,stroke:#e11d48,color:#881337
+    classDef media fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef artifact fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef audit fill:#fef9c3,stroke:#ca8a04,color:#713f12
+    classDef app fill:#ecfdf5,stroke:#059669,color:#064e3b
+    classDef feedback fill:#f0fdf4,stroke:#16a34a,color:#14532d
+    classDef decision fill:#fff7ed,stroke:#ea580c,color:#7c2d12
+    classDef publish fill:#dcfce7,stroke:#16a34a,color:#14532d
 ```
 
 ---
