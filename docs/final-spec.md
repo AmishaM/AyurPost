@@ -96,6 +96,8 @@ flowchart LR
     classDef vector fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
 ```
 
+PDFs are split into 15-page batches (Document AI's inline limit per request), OCR'd, then stitched into per-volume text files. The chunker applies sthana-aware segmentation to handle chapter-number restarts across sthanas, cleans noise lines (page numbers, running headers, OCR garbles), and passes text through SentenceSplitter. The tagger then adds dosha/herb/disease labels via exact gazetteer lookup — no LLM involved. Both dense (Voyage) and sparse (BM25) vectors are upserted with the full chunk payload, with payload indexes enabling O(1) dosha filtering at query time.
+
 ### Diagram 2 — Content Generation & Review
 
 ```mermaid
@@ -138,6 +140,8 @@ flowchart LR
     classDef decision fill:#fff7ed,stroke:#ea580c,color:#7c2d12
     classDef publish fill:#dcfce7,stroke:#16a34a,color:#14532d
 ```
+
+Three roadmap YAMLs (seasonal, dosha education, clinic services) feed a calendar engine that assigns one of 20 rotating content slots to each posting date. The selected pillar and topic drive a retriever query with a dosha hard-filter, returning 6 grounding chunks. Claude Opus 4.8 writes a structured `ReelScript` (3 scenes, max 15 words each) citing only the supplied chunks. Veo generates one hyper-realistic 9:16 clip per scene; Chirp3-HD synthesises the voiceover; FFmpeg assembles them with xfade transitions and a ducked music bed. Sonnet 4.6 audits the script for groundedness and compliance before it reaches the doctor. In the Streamlit review app (Cloud Run, GCS-mounted artifacts), the doctor browses the monthly calendar, watches reels inline, and can prompt voiceover edits — which re-run Opus with the feedback, keeping the existing Veo clips to avoid re-generation cost.
 
 ---
 
